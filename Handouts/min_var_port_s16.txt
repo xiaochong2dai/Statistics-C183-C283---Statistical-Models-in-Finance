@@ -1,0 +1,55 @@
+library(stockPortfolio)
+
+#Ticker vector of 15 stocks plus s&p500:
+ticker <-  c("C", "KEY", "WFC", "SO", "DUK","D","HE", "EIX" ,"AMGN","GILD","CELG","BIIB","IMO",
+"MRO","YPF","^GSPC")
+
+#Identify the industry (not needed in this example):
+ind <- c("Money Center Banks",  "Money Center Banks",  "Money Center Banks", "Electrical Utilities", "Electrical Utilities", "Electrical Utilities", "Electrical Utilities", "Electrical Utilities",  "Biotechnology", "Biotechnology", "Biotechnology", "Biotechnology", "Fuel Refining", "Fuel Refining", "Fuel Refining", "Index") 
+
+#Put them together:
+data <- as.data.frame(cbind(ticker, ind))
+
+ticker <- data$ticker
+ind <- data$ind
+
+#Get data:
+gr1 <- getReturns(ticker, start='2012-12-31', end='2016-03-31')
+
+#Create the Rbar vector:
+Rbar <- colMeans(gr1$R[,1:15])
+
+#Compute the variance covariance matrix:
+varcovar <- cov(gr1$R[,1:15])
+
+#Find the inverse of the variance covariance matrix:
+V <- solve(varcovar)
+
+#Create a vector of ones (needed in the calculation for the weights x):
+ones <- rep(1,15)
+
+#Find the portfolio weights:
+x <- V %*% ones / as.numeric(t(ones) %*% V %*% ones)
+
+#Verify they su to 1:
+sum(x)
+
+#Compute the mean of the minimum risk portfolio:
+rmin <- t(x) %*% Rbar
+
+#Compute the variance of the minimum risk portfolio:
+varmin <- t(x) %*% varcovar %*% x
+
+#Compute the standard deviation of the minimum risk portfolio:
+sdmin <- varmin^.5
+
+#Plot the 15 stocks in the space expected return, standard deviation):
+plot(apply(gr1$R[,1:15], 2, sd), Rbar, xlim=c(0.01,0.16), xlab="Risk (standard deviation)", ylab="Expected return")
+
+#Add the minimum risk portfolio:
+points(sdmin, rmin, pch=19)
+
+#Add the s&p500 on the plot:
+points(sd(gr1$R[,16]), mean(gr1$R[,16]),  pch=19, col="green")
+
+

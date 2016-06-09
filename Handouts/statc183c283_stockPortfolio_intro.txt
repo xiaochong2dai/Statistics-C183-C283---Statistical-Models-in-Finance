@@ -1,0 +1,137 @@
+#===> Example using stockPortfolio <===#
+# four components
+# (1) quick intro
+# (2) detailed intro
+# (3) we pick stocks and try it out
+# (4) additional tools
+
+#########################
+#===> ((((( 1 ))))) <===#
+#===> quick example <===#
+#########################
+# load package
+library(stockPortfolio)
+
+# select stocks
+#IBM: International Business Machines Copr.
+#WFC: Wells Fargo & Compnay
+#JPM: JPMorgan Chase & Company
+#LUV: Southwest Airlines Co.
+
+ticker <- c('IBM', 'WFC', 'JPM', 'LUV')
+
+#Get stock data
+gr <- getReturns(ticker, start='2005-03-31', end='2010-03-31')
+
+#gr is a "list" object and we find what it contains
+# by typing the following:
+names(gr)
+
+#We can access each component of gr by typing:
+gr$R
+gr$ticker
+etc.
+
+#Obtain the variance-covariance matrix of the returns:
+cov(gr$R)
+
+#Obtain the correlation matrix of the returns:
+cor(gr$R)
+
+#We can find summary statistics as follows:
+summary(gr$R)
+
+#To find the mean, variance, and standard deviation of a particular stock
+mean(gr$R[,4])
+var(gr$R[,4])
+sd(gr$R[,4])
+
+#To find the means of all five stocks:
+xx <- as.data.frame(gr$R)
+colMeans(xx)
+
+#To find the covariance and correlation between two stocks:
+cov(gr$R[,1], gr$R[,4])
+cor(gr$R[,1], gr$R[,4])
+
+#=========================================================================
+#=========================================================================
+#Note:  The following lines until the end of this page can be done outside the package!
+# Let's work with two stocks:  IBM and LUV.
+# Find the composition of the minimum risk portfolio:
+x_IBM <- (var(gr$R[,4]) - cov(gr$R[,1], gr$R[,4])) /
+(var(gr$R[,1]) + var(gr$R[,4]) - 2*cov(gr$R[,1], gr$R[,4]))
+x_LUV <- 1-x_IBM
+
+# Find the mean and sd of the minimum risk portfolio:
+mean_min <-  x_IBM*mean(gr$R[,1]) + x_LUV*mean(gr$R[,4])
+
+var_min <-  x_IBM^2*var(gr$R[,1]) + x_LUV^2*var(gr$R[,4]) + 
+          2*x_IBM*x_LUV*cov(gr$R[,1], gr$R[,4]) 
+sd_min <- var_min^0.5 
+
+# Construct the portfolio possibilities curve and identify the efficient frontier:
+a <- seq(0,1,.01)
+b <- 1-a
+
+mean_p <- a*mean(gr$R[,1]) + b*mean(gr$R[,4])
+var_p <- a^2*var(gr$R[,1]) + b^2*var(gr$R[,4]) + 
+         2*a*b*cov(gr$R[,1], gr$R[,4]) 
+sd_p <- var_p^0.5
+
+plot(sd_p,mean_p, type="l", xlab="Portfolio standard deviation (risk)", ylab="Portfolio expected return")
+points(sd_min, mean_min, pch=19, col="green")
+
+# Identify the efficient frontier:
+xx <- cbind(sd_p,mean_p)
+xxx <- xx[which(xx[,2]>mean_min),]
+points(xxx, type="l", col="blue", lwd=3)
+#=========================================================================
+#=========================================================================
+#Use stockPortfolio to find the composition of the point of 
+#tangency (point G):
+
+#Step 1:  Select a model.  At this point we only know one model (short sales + risk free rate).  We call this no model, denoted with "none".
+port_model <- stockModel(gr, model="none", Rf=0.001)
+
+#Step 2:  Optimize, i.e. find the composition of the point of tangency.
+op <- optimalPort(port_model)
+
+#Note:  op is a class of "optimalPortfolio" and contains the following:
+#model:  The model used (here "none").
+#X:  The composition of the point of tangency.
+#R:  The expected return of the point of tangency.
+#risk:  The standard deviation of the point of tangency.
+
+#All the above information can be accessed using op$name, where name is one $of (model, X, R, risk).
+
+#For example:
+op$X
+ 
+op$R
+
+op$risk
+
+
+#Visualization
+#Add the portfolio possibilities curve:
+portPossCurve(port_model, xlim=c(0,0.25), ylim=c(-0.005,0.02))
+
+#Add a cloud of many portfolios:
+portCloud(port_model, add=TRUE)
+
+#Add the five stocks plus the point of tangency:
+points(op, pch=19, add=TRUE)
+
+points(op$risk, op$R, pch=19, col="green")
+
+#Add the tangent (the following will draw the line only up to G):
+Rf <- 0.001
+segments(0,Rf,op$risk,op$R)
+
+#If you want to extend the tangent beyond G:
+slope <- (op$R-Rf)/op$risk
+
+segments(0,Rf,1.4*op$risk, Rf+slope*1.4*op$risk)
+
+

@@ -1,0 +1,60 @@
+s1 <- read.csv("http://ichart.finance.yahoo.com/table.csv?s=IBM&a=00&b=31&c=2005&d=02&e=31&f=2012&g=m&ignore=.csv", sep=",", header=TRUE)
+
+s2 <- read.csv("http://ichart.finance.yahoo.com/table.csv?s=XOM&a=00&b=31&c=2005&d=02&e=31&f=2012&g=m&ignore=.csv", sep=",", header=TRUE)
+
+s3 <- read.csv("http://ichart.finance.yahoo.com/table.csv?s=AAPL&a=00&b=31&c=2005&d=02&e=31&f=2012&g=m&ignore=.csv", sep=",", header=TRUE)
+
+#Select only the adjusted close prices from each file:
+prices <- as.data.frame(cbind(s1$Adj.Close, s2$Adj.Close, s3$Adj.Close))
+
+#You can rename the adjusted close prices as follows:
+names(prices) <-c("p1", "p2", "p3")
+
+#Convert adjusted close prices into returns:
+ribm <- (prices$p1[-length(prices$p1)]-prices$p1[-1])/prices$p1[-1]
+rxom <- (prices$p2[-length(prices$p2)]-prices$p2[-1])/prices$p2[-1]
+raapl <- (prices$p3[-length(prices$p3)]-prices$p3[-1])/prices$p3[-1]
+
+#Place the returns together in a data frame:
+returns <- as.data.frame(cbind(ribm,rxom,raapl))
+
+#Compute the var-cov matrix and its inverse:
+S <- cov(returns)
+Sinv <- solve(S)
+
+#Compute the mean returns:
+Rbar <- as.matrix(colMeans(returns))
+
+
+#GIve different values of rf:
+rf <- seq(0,.005,.0001)
+
+#We want the intercept and slope to plot zi against rf: 
+#For stock 1:
+intercept1 <- Sinv[1,] %*% Rbar
+slope1 <- sum(Sinv[1,])
+z1 <- intercept1 - slope1*rf
+
+#For stock 2: 
+intercept2 <- Sinv[2,] %*% Rbar
+slope2 <- sum(Sinv[2,])
+z2 <- intercept2 - slope2*rf
+ 
+#For stock 3:
+intercept3 <- Sinv[3,] %*% Rbar
+slope3 <- sum(Sinv[3,])
+z3 <- intercept3 - slope3*rf
+
+#Plot the three lines:
+plot(rf,z1, type="l", ylim=c(-10,10), ylab=expression(z[i]), xlab="Risk free rate (rf)")
+points(rf,z2, type="l")
+points(rf,z3, type="l")
+
+text(.001,3.5, expression(Z[3]))
+text(.001,1.5, expression(Z[1]))
+text(.001,-.5, expression(Z[2]))
+
+
+
+
+

@@ -1,0 +1,123 @@
+#TRACE OUT THE EFFICIENT FRONTIER - NO RISKLESS LENDING AND BORROWING:
+
+#Read many combinations of the three stocks:
+data <- read.table("abc.txt", header=TRUE)
+
+#Or from here:
+data <- read.table("http://www.stat.ucla.edu/~nchristo/datac183c283/statc183c283_abc.txt", header=TRUE)
+
+#Compute the standard deviation of each portfolio:
+sigma_p <- ((data$a)^2*0.0036+(data$b)^2*0.0064+(data$c)^2*0.04+2*data$a*data$b*0.5*0.06*0.08+2*data$a*data$c*0.2*0.06*0.2+2*data$b*data$c*0.4*0.08*0.2)^.5
+
+#Compute the expected return of each portfolio:
+rp_bar <- data$a*0.14+data$b*0.08+data$c*0.2
+
+#Create a matrix with a, b, c, sigma_p, rp_bar:
+qq <- cbind(data$a, data$b, data$c, sigma_p, rp_bar)
+
+#Create a matrix with all the points not allowing short sales:
+qq2 <- qq[which(qq[,1]>0 & qq[,2]>0 & qq[,3]>0),]
+
+#Create a matrix with all the points allowing short sales:
+qq1 <- qq[which(qq[,1]<0 | qq[,2]<0 | qq[,3]<0),]
+
+#Plot the points:
+plot(qq[,4], qq[,5], type="n" ,xlim=c(0,0.2), ylim=c(0,0.35), xlab="Portfolio standard deviation", ylab="Expected return", xaxt="no", yaxt="no")
+
+axis(1, at=seq(0, 0.2, 0.02))
+axis(2, at=seq(0, 0.35, 0.02))
+
+points(qq1[,4], qq1[,5], col="blue", cex=0.6)
+
+points(qq2[,4], qq2[,5], col="green", cex=0.6)
+
+
+
+
+
+
+
+
+
+#Trace out the efficient frontier.  We need to find two portfolios on the efficient frontier:
+
+#Construct the variance-covariance matrix:
+var_covar <- matrix(
+c(.0036,.0024,.0024,.0024,.0064,.0064,.0024,.0064,.04),ncol=3, byrow=TRUE)
+ 
+
+#Construct the vector of the expected returns: 
+R_ibar <- as.matrix(c(.14,.08,.2))
+
+#Choose two risk free rates:
+Rf1 <- 0.05
+Rf2 <- 0.08
+
+#Construct the vectors RA and RB: 
+RA <- R_ibar-Rf1
+RB <- R_ibar-Rf2
+
+#Find the composition of the two portfolios A, B:
+zA <- solve(var_covar) %*% RA
+xA <- zA/sum(zA)
+
+zB <- solve(var_covar) %*% RB
+xB <- zB/sum(zB)
+
+
+#Compute the expected return and variance of portfolios A and B.  Also compute the covariance between portfolio A an B:
+RA_bar <- t(xA) %*% R_ibar
+RB_bar <- t(xB) %*% R_ibar
+var_A <- t(xA) %*% var_covar %*% xA
+var_B <- t(xB) %*% var_covar %*% xB
+cov_AB <- t(xA) %*% var_covar %*% xB
+sd_A <- var_A^.5
+sd_B <- var_B^.5
+
+
+
+
+
+
+
+
+
+
+#We can find now the portfolio possibilities curve by treating portfolios A and B as two stocks:
+
+xa <- seq(-3, 5, 0.01)
+xb <- 1-xa
+
+#Compute the expected return and standard deviation for each combination of xa, xb:
+sigma_p <- (xa^2*var_A + xb^2*var_B+ 2*xa*xb*cov_AB)^.5
+
+rp_bar <- xa*RA_bar + xb*RB_bar
+
+
+#Plot:
+plot(sigma_p, rp_bar, xlim=c(0,0.2), ylim=c(0,0.35), xlab="Portfolio standard deviation", ylab="Expected return", cex=0.3, col="green", xaxt="no", yaxt="no")
+
+axis(1, at=seq(0, 0.2, 0.02))
+axis(2, at=seq(0, 0.35, 0.02))
+
+points(sd_A, RA_bar, col="black", pch=19, cex=0.6)
+points(sd_B, RB_bar, col="black", pch=19, cex=0.6)
+
+text(sd_A-0.005, RA_bar+0.01, "A")
+text(sd_B-0.005, RB_bar+0.01, "B")
+
+#Compute the minimum risk portfolio in terms of the portfolios A and B:
+xA_min <- (var_B - cov_AB)/(var_A+var_B-2*cov_AB)
+xB_min <- 1-xA_min
+
+#Find the composition of the minimum risk portfolio in terms of the three stocks:
+x1_min <- xA_min*xA[1] + xB_min*xB[1]
+x2_min <- xA_min*xA[2] + xB_min*xB[2]
+x3_min <- xA_min*xA[3] + xB_min*xB[3]
+
+#Find the expected return and standard deviation of the minimum risk portfolio:
+
+xx <- as.matrix(c(x1_min,x2_min,x3_min))
+
+rp_minimum <- t(xx) %*% R_ibar
+sd_minimum <- (t(xx) %*% var_covar %*% xx)^.5

@@ -1,0 +1,124 @@
+#SIM and CCM using stockPortfolio
+##########################
+#===> ((((( 2 )))))  <===#
+#===> main functions <===#
+##########################
+#===> obtain a lot of tickers via included data set <===#
+library(stockPortfolio)
+
+#DATA:
+ticker <-  c("C", "KEY", "WFC", "JPM",  "SO", "DUK",  "D", "HE",  "EIX",   "LUV", "AMGN",  "GILD", "CELG", "BIIB",  "CAT", "DE", "IMO", "MRO", "HES", "YPF", "^GSPC")
+
+#===> get data <===#
+gr1 <- getReturns(ticker, start='1999-12-31', end='2004-12-31')
+summary(gr1)
+gr1$R		# returns
+gr1$ticker  # original ticker
+gr1$period  # sample spacing
+gr1$start   # when collection started
+gr1$end     # when collection ended
+
+#===> simple model building <===#
+========================================================================
+#No model - classical Markowitz model:
+m1 <- stockModel(gr1, drop=21) # drop index
+summary(m1)
+
+#Find the point of tangency:
+op1  <- optimalPort(m1)
+
+#Type op1 to see the composition of the point of tangency:
+op1
+
+#Plot the 20 stocks, the index, and point G (point of tangency):
+plot(op1, xlim=c(0,0.3))
+
+#Add the portfolio possibilities curve:
+portPossCurve(m1, add=TRUE)
+
+#Add the tangent (the following will draw the line only up to G:
+segments(0,0,op1$risk,op1$R)
+
+#If you want to extend the tangent beyond G:
+slope <- (op1$R-0)/op1$risk
+
+segments(0,0,2*op1$risk, m1$Rf+slope*2*op1$risk)
+
+#Add a cloud of points for visualization:
+portCloud(m1)
+
+========================================================================
+#Single index model:
+#Short sales allowed, default Rf=0.
+sm1SIM  <- stockModel(gr1, model='SIM', index=21)
+ # defaults:
+ #    Rf = 0
+ #    shortSelling = TRUE
+
+#Short sales not allowed & a choice of Rf.
+sm2SIM <- stockModel(gr1, model='SIM', index=21, Rf=0.03/12, shortSelling=FALSE)
+
+#===> identify the optimal portfolio for single index model<===#
+op1SIM <- optimalPort(sm1SIM)
+op2SIM <- optimalPort(sm2SIM)
+plot(op1SIM)
+points(op2SIM, optPortOnly=TRUE, colOP='#888888', cex=2)
+portPossCurve(sm1SIM, add=TRUE, riskRange=5)
+
+
+========================================================================
+#Constant correlation model:
+sm1CCM  <- stockModel(gr1, model='CCM', drop=21)
+sm2CCM  <- stockModel(gr1, model='CCM', drop=21, shortSelling=FALSE)
+
+
+#===> identify the optimal portfolio for constant correlation model<===#
+op1CCM <- optimalPort(sm1CCM)
+op2CCM <- optimalPort(sm2CCM)
+
+plot(op1CCM)
+points(op2CCM, optPortOnly=TRUE, colOP='#888888', cex=2)
+portPossCurve(sm1CCM, add=TRUE, riskRange=5)
+
+========================================================================
+
+
+
+
+
+
+#Back to single index model.
+#Adjusting the betas using Blume's and Vasicek's techniques.
+
+#Need another historical period:
+gr2 <- getReturns(ticker, start='2004-12-31', end='2009-12-31')
+
+#Single index model for period 2004-2009:
+sm3SIM  <- stockModel(gr2, model='SIM', index=21)
+
+#Update the model using Blume's technique:
+simBlu <- adjustBeta(sm1SIM, sm3SIM) # default method is "Blume"
+
+
+#Update the model using Vasicek's technique:
+simVas <- adjustBeta(sm3SIM, method="V")
+
+#Optimize:
+op3SIM <- optimalPort(sm3SIM)
+opBlu <- optimalPort(simBlu)
+opVas <- optimalPort(simVas)
+
+
+
+par(mfrow=c(1,3))
+plot(op3SIM, xlim=c(0, 0.25), ylim=c(-0.03, 0.12), main="Betas unadjusted")
+portPossCurve(sm3SIM, add=TRUE, riskRange=10)
+
+plot(opBlu, xlim=c(0, 0.25), ylim=c(-0.03, 0.12), main="Betas - Blume")
+portPossCurve(simBlu, add=TRUE, riskRange=10)
+
+plot(opVas, xlim=c(0, 0.25), ylim=c(-0.03, 0.12), main="Betas - Vasicek")
+portPossCurve(simVas, add=TRUE, riskRange=10)
+
+
+========================================================================

@@ -1,0 +1,21 @@
+Access the following data:
+a1 <- read.table("http://real-chart.finance.yahoo.com/table.csv?s=AAPL&a=00&b=01&c=2010&d=03&e=1&f=2015&g=m&ignore=.csv", sep=',', header=TRUE)
+
+a2 <- read.table("http://real-chart.finance.yahoo.com/table.csv?s=IBM&a=00&b=01&c=2010&d=03&e=1&f=2015&g=m&ignore=.csv", sep=',', header=TRUE)
+
+a3 <- read.table("http://real-chart.finance.yahoo.com/table.csv?s=XOM&a=00&b=01&c=2010&d=03&e=1&f=2015&g=m&ignore=.csv", sep=',', header=TRUE)
+
+
+
+#Answer the following questions.
+
+#Convert the adjusted close prices into returns.
+
+#Create a data frame using the returns.
+
+#Compute summary Statistics.
+
+
+#Find the composition of the minimum risk portfolio.
+
+#Now use only two stocks (AAPL and XOM).  Compute the standard deviation and expected return of many combinations (portfolios) of the two stocks and plot them on the space expected return / standard deviation to see the portfolio possibilities curve.

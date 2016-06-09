@@ -1,0 +1,157 @@
+PORTFOLIO ANALYSIS:  INPUT MEANS, VARIANCES, COVARIANCE
+=======================================================
+#Mean, variances, and covariances:
+
+r1_bar <- 0.01
+r2_bar <- 0.013
+var1 <- 0.0061
+var2 <- 0.0046
+cov_12 <- 0.00062
+ 
+
+#Short sales NOT allowed:
+a <- seq(0,1, 0.01)
+b <- 1-a
+cbind(a,b)
+
+rp_bar_ns <- a*r1_bar+b*r2_bar
+var_p_ns <- a^2*var1+b^2*var2+2*a*b*cov_12
+sd_p_ns <- var_p_ns^0.5
+
+
+#Short sales allowed:
+a1 <- seq(-2,2, 0.01)
+b1 <- 1-a1
+
+cbind(a1,b1)
+
+rp_bar_s <- a1*r1_bar+b1*r2_bar
+var_p_s <- a1^2*var1+b1^2*var2+2*a1*b1*cov_12
+sd_p_s <- var_p_s^0.5
+ 
+#Plot the two portfolios possibilities curves:
+#Green:  Short sales allowed.
+#Blue:  Short sales not allowed.
+plot(sd_p_s, rp_bar_s, col="green")
+points(sd_p_ns, rp_bar_ns, col="blue")
+=====================================================
+=====================================================
+=====================================================
+PORTFOLIO ANALYSIS:  READ .csv FILES
+======================================================
+#Read the two files:
+a1 <- read.table("table_1.csv", header=T, sep=",")
+a2 <- read.table("table_2.csv", header=T, sep=",")
+
+#Or access from the course website:
+a1 <- read.table("http://www.stat.ucla.edu/~nchristo/statistics_c183_c283/
+      table_1.csv", header=TRUE, sep=",")
+
+a2 <- read.table("http://www.stat.ucla.edu/~nchristo/statistics_c183_c283/
+      table_2.csv", header=TRUE, sep=",")
+
+
+#Select only the close prices from each file:
+prices <- as.data.frame(cbind(a1$Close, a2$Close))
+
+class(prices)
+
+#You can rename the Close prices as follows:
+names(prices) <-c("p1", "p2")
+
+#You can see your data:
+prices$p1
+prices$p2
+
+#Convert the close prices into returns:
+r1 <- (prices$p1[-length(prices$p1)]-prices$p1[-1])/prices$p1[-1]
+r2 <- (prices$p2[-length(prices$p2)]-prices$p2[-1])/prices$p2[-1]
+
+#Place the returns together in a data frame:
+returns <- as.data.frame(cbind(r1,r2))
+
+#Construct a histogram of the returns:
+hist(r1)
+hist(r2)
+
+#The following 5 lines will save the histograms in a pdf file on your 
+#current working directory: 
+pdf("hist_r1_r2.pdf", h=3.0)
+par(mfrow=c(1,2))
+hist(r1, main="Histogram 1", xlab="Stock1")
+hist(r2, main="Histogram2", xlab="Stock2")
+dev.off()
+
+
+#Get summary statistics of the returns:
+summary(returns)
+
+#Get the mean returns:
+mean(returns)
+
+#Get the variance covariance matrix of the returns:
+cov(returns)
+
+#Create many portfolios (combinations of the two stocks):
+a <- seq(0,1,.01)
+b <- seq(1,0,-.01)
+#Or simply
+b <- 1-a
+
+#Compute the expected return of each portfolio:
+rp_bar <- a*mean(returns$r1)+b*mean(returns$r2)
+
+#Compute the variance and standard deviation of each portfolio:
+var_p <- a^2*var(returns$r1)+b^2*var(returns$r2)+
+         2*a*b*cov(returns$r1,returns$r2)
+
+sd_p <- var_p^.5
+
+#Create a data frame of the standard deviation and expected return of 
+#each portfolio:
+qq <- as.data.frame(cbind(sd_p, rp_bar))
+
+#Plot the portfolio possibilities curve:
+plot(sd_p, rp_bar, xlab="Portfolio risk (standard deviation)", 
+     ylab="Expected return")
+
+#You can get the same plot by simply doing this:
+plot(qq, xlab="Portfolio risk (standard deviation)", 
+     ylab="Expected return")
+
+#If you want a line instead of points:
+plot(qq, xlab="Portfolio risk (standard deviation)", 
+     ylab="Expected return", type="l")
+
+#Find the composition of the minimum risk portfolio:
+x1 <- (var(returns$r2)-cov(returns$r1,returns$r2))/
+      (var(returns$r1)+var(returns$r2)-2*cov(returns$r1,returns$r2))
+x2 <- 1-x1
+
+#Compute the expected return and standard deviation of the minimum risk 
+#portfolio:
+rp_bar_min <- x1*mean(returns$r1)+x2*mean(returns$r2)
+
+sd_p_min <- (x1^2*var(returns$r1)+x2^2*var(returns$r2)+
+             2*x1*x2*cov(returns$r1,returns$r2))^0.5
+
+#Add the minimum risk portfolio on the previous plot:
+points(sd_p_min, rp_bar_min, col="green", pch=19)
+
+
+#Identify the efficient frontier.
+#First find the portfolios that have expected return above the expected return 
+#of the minimum risk portfolio:
+qqq <- qq[qq$rp_bar > rp_bar_min, ]
+
+#And then draw the efficient frontier:
+points(qqq, col="blue", type="l", lwd=5)
+
+#Save the graph in a pdf file:
+pdf("portfolio_curve_s10.pdf")
+plot(qq, xlab="Portfolio risk (standard deviation)", 
+     ylab="Portfolio expected return", type="l")
+points(sd_p_min,rp_bar_min, col="green", pch=19)
+points(qqq, col="blue", type="l", lwd=5)
+dev.off()
+

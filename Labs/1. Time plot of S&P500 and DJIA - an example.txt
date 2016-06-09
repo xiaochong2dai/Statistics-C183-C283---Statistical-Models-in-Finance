@@ -1,0 +1,46 @@
+#Get data for s&p500 from 1950 to 2016:
+a <- read.csv("http://real-chart.finance.yahoo.com/table.csv?s=%5EGSPC&a=00&b=3&c=1950&d=02&e=29&f=2016&g=m&ignore=.csv", sep=",", header=TRUE)
+
+#Time plot of the adjusted close price:
+plot(rev(a$Adj.Close), type="l", xaxt="n", ylab="Price", xlab="Year", main="Adjusted close prices for S&P500 1950-2016")
+
+#Add axis labels:
+axis(1, at=seq(0, nrow(a), by=12),labels=seq(1950, 2016, by=1))
+
+=============================================================================
+#Get data for DJIA from 1985 to 2016:
+b <- read.csv("http://real-chart.finance.yahoo.com/table.csv?s=%5EDJI&a=00&b=3&c=1950&d=02&e=29&f=2016&g=m&ignore=.csv", sep=",", header=TRUE)
+
+#Time plot of the adjusted close price:
+plot(rev(b$Adj.Close), type="l", xaxt="n", ylab="Price", xlab="Year", main="Adjusted close prices for DJIA 1985-2016")
+
+#Add axis labels:
+axis(1, at=seq(0, nrow(b), by=12),labels=seq(1985, 2016, by=1))
+=============================================================================
+=============================================================================
+=============================================================================
+#Use the stockPortfolio package to plot the returns over time of s&p500:
+library(stockPortfolio)
+
+ticker <- c("^GSPC")
+ar <- getReturns(ticker, start='1950-01-01', end='2016-03-31')
+
+#Time plot of the returns:
+plot(ar$R, type="l", xaxt="n", ylab="Return", xlab="Year", main="Returns for S&P500 1950-2016")
+
+#Add axis labels:
+axis(1, at=seq(0, nrow(ar$R), by=12),labels=seq(1950, 2016, by=1))
+
+=============================================================================
+#Use the stockPortfolio package to plot the returns over time of DJIA:
+library(stockPortfolio)
+
+ticker <- c("^DJI")
+br <- getReturns(ticker, start='1985-01-01', end='2016-03-31')
+
+#Time plot of the returns:
+plot(br$R, type="l", xaxt="n", ylab="Return", xlab="Year", main="Returns for DJIA 1985-2016")
+
+#Add axis labels:
+axis(1, at=seq(0, nrow(br$R), by=12),labels=seq(1985, 2016, by=1))
+

@@ -1,0 +1,58 @@
+#########################################################
+#===> ((((( Trace out the efficient frontier )))))  <===#
+#===> main functions <===#
+#########################################################
+#===> obtain a lot of tickers via included data set <===#
+library(stockPortfolio)
+
+#DATA:
+ticker <-  c("C", "KEY", "WFC", "JPM",  "SO", "DUK",  "D", "HE",  "EIX",   "LUV", "AMGN",  "GILD", "CELG", "BIIB",  "CAT", "DE", "IMO", "MRO", "HES", "YPF", "^GSPC")
+
+#===> get data <===#
+gr1 <- getReturns(ticker, start='1999-12-31', end='2004-12-31')
+
+
+#Single index model:
+#Short sales allowed, default Rf=0.
+sm1SIM  <- stockModel(gr1, model='SIM', index=21)
+ # defaults:
+ #    Rf = 0
+ #    shortSelling = TRUE
+
+
+ops1  <- optimalPort(sm1SIM)
+plot(ops1)
+portPossCurve(sm1SIM, add=TRUE, riskRange=5)
+
+#Generate many values of RF:
+Rfr <- seq(-5,.01,0.0005)
+
+#Initialize the two vectors:
+rbar_opt <- rep(0,length(Rfr))
+risk_opt <- rep(0,length(Rfr))
+
+#Use the single index model to find many points of tangency (one for each #value of Rf:
+for(i in 1:length(Rfr)){
+simn <- stockModel(gr1, model='SIM', index=21, Rf=Rfr[i], shortSelling=FALSE)
+opsimn <- optimalPort(simn)
+rbar_opt[i] <- opsimn$R
+risk_opt[i] <- opsimn$risk
+}
+
+
+#Identify the efficient frontier when short sales not allowed:
+points(risk_opt,rbar_opt,type="l" )
+
+#Add the minimum risk portfolio when short sales are not allowed (this is #an approximation - but a good one!):
+smnSIM_mvp <- stockModel(gr1, model='SIM', index=21, Rf=-100, shortSelling=FALSE)
+
+opnSIM_mvp <- optimalPort(smnSIM_mvp)
+
+points(opnSIM_mvp, optPortOnly=TRUE, colOP='#888888', cex=2)
+
+
+#View only the efficient frontier when short sales are not allowed:
+plot(risk_opt,rbar_opt,type="l" )
+
+points(opnSIM_mvp, optPortOnly=TRUE, colOP='#888888', cex=2)
+

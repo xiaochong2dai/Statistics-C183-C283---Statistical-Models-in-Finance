@@ -1,0 +1,47 @@
+# Read data:
+a<- read.table("http://www.stat.ucla.edu/~nchristo/datac183c283/statc183c283_5stocks.txt", header=T)
+
+#Convert prices into returns:
+r1 <- (a$P1[-length(a$P1)]-a$P1[-1])/a$P1[-1] 
+r2 <- (a$P2[-length(a$P2)]-a$P2[-1])/a$P2[-1] 
+r3 <- (a$P3[-length(a$P3)]-a$P3[-1])/a$P3[-1] 
+r4 <- (a$P4[-length(a$P4)]-a$P4[-1])/a$P4[-1] 
+r5 <- (a$P5[-length(a$P5)]-a$P5[-1])/a$P5[-1]
+
+#Use stocks 1, 4, 5:
+ret <- data.frame(r1,r4,r5)
+
+row.names(ret) <- a$date[-216]
+
+#Convert the data frame into a matrix:
+ret <- as.matrix(ret)
+
+#Load the package:
+library(stockPortfolio)
+
+#Choose a model:
+port_model <- stockModel(ret, model="none", Rf=0.001)
+
+#Optimize:
+op <- optimalPort(port_model)
+
+#Portfolio possibilities curve, cloud of points, etc.
+portPossCurve(port_model, xlim=c(0,0.20), ylim=c(-0.0008,0.007))
+
+portCloud(port_model, add=TRUE)
+
+points(op, pch=19, add=TRUE)points(op$risk, op$R, pch=19, col="green")
+
+#Draw the tangent:
+Rf <- 0.001segments(0, Rf, op$risk, op$R)
+
+#If you want to extend the tangent beyond G:slope <- (op$R-Rf)/op$risksegments(0, Rf, 1.4*op$risk, Rf+slope*1.4*op$risk)
+
+#Place the portfolio 60% G + 40% Rf on the CAL:
+points(0.60*op$risk,0.6*op$R+0.4*0.001)
+
+
+
+
+
+

@@ -1,0 +1,43 @@
+s1 <- read.csv("http://ichart.finance.yahoo.com/table.csv?s=IBM&a=00&b=31&c=2005&d=02&e=31&f=2012&g=m&ignore=.csv", sep=",", header=TRUE)
+
+s2 <- read.csv("http://ichart.finance.yahoo.com/table.csv?s=XOM&a=00&b=31&c=2005&d=02&e=31&f=2012&g=m&ignore=.csv", sep=",", header=TRUE)
+
+s3 <- read.csv("http://ichart.finance.yahoo.com/table.csv?s=AAPL&a=00&b=31&c=2005&d=02&e=31&f=2012&g=m&ignore=.csv", sep=",", header=TRUE)
+
+head(s1)
+
+head(s2)
+
+head(s3)
+
+#Select only the adjusted close prices from each file:prices <- as.data.frame(cbind(s1$Adj.Close, s2$Adj.Close, s3$Adj.Close))
+
+#You can rename the adjusted close prices as follows:names(prices) <-c("p1", "p2", "p3")
+
+#Convert adjusted close prices into returns:
+ribm <- (prices$p1[-length(prices$p1)]-prices$p1[-1])/prices$p1[-1]rxom <- (prices$p2[-length(prices$p2)]-prices$p2[-1])/prices$p2[-1]
+raapl <- (prices$p3[-length(prices$p3)]-prices$p3[-1])/prices$p3[-1]
+
+#Place the returns together in a data frame:
+returns <- as.data.frame(cbind(ribm,rxom,raapl))
+
+mean(returns)
+
+#Or use
+sapply(returns, mean)
+
+#Or
+colMeans(returns)
+
+cov(returns)
+
+a <- seq(0, 1, 0.01)
+b <- 1-a
+
+#Construct portfolio possibilities curve using IBM and AAPL:
+rp_bar <- a*mean(ribm) + b*mean(raapl)
+var_p <- a^2*var(ribm) + b^2*var(raapl) + 2*a*b*cov(ribm,raapl)
+sd_p <- sqrt(var_p)
+
+plot(sd_p, rp_bar)
+
