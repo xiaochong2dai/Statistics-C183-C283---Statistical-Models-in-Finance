@@ -1,0 +1,211 @@
+---
+title: "Stats 183 Project"
+author: "Jing Li (704133682)"
+date: "May 3, 2016"
+output: html_document
+---
+
+##Part A
+
+```{r}
+library(stockPortfolio)
+ticker<-c("CRI", "RL", "KATE", "COLM", "NKE", "CROX", "SKX", "SHOO", "COH", "FL", "AMGN", "GNVC", "SGMO", "PARD", "ONTY", "LFC", "MET", "PNX", "NWLI", "AEL", "AAL", "CEA", "AIR", "UAL", "ZNH", "S&P500")
+ind<-c(rep("Apparel Chlothing", 4), rep("Footwear", 6), rep("Biotechnology", 5), rep("Life Insurance", 5), rep("Major Airline",5), "Market")
+my_po<-as.data.frame(cbind(ticker,ind))
+gr<-getReturns(ticker,start='2008-12-31', end='2013-12-31')
+```
+
+##Question 1
+```{r}
+m1<-stockModel(gr,drop=26,Rf= 0.001)
+summary(m1)
+op1<-optimalPort(m1)    
+op1$X    #point of tangency
+op1$R    #expected return
+op1$risk     #standard deviation
+plot(op1)
+slope <- (op1$R-m1$Rf)/op1$risk
+segments(0,m1$Rf,2*op1$risk, m1$Rf+slope*2*op1$risk)
+```
+
+##Question 2
+```{r}
+#Rf=0.005
+m2<-stockModel(gr,drop=26,Rf=0.005)
+op2<-optimalPort(m2)
+plot(op2)
+slope <- (op2$R-m2$Rf)/op2$risk
+segments(0,m2$Rf,2*op1$risk, m2$Rf+slope*2*op1$risk)
+portPossCurve(m2,add=TRUE,riskRange=4)
+
+#Rf=0.002
+m3<-stockModel(gr,drop=26,Rf=0.002)
+op3<-optimalPort(m3)
+plot(op3)
+slope <- (op3$R-m3$Rf)/op3$risk
+segments(0, m3$Rf, 2*op1$risk, m3$Rf+slope*2*op1$risk)
+portPossCurve(m3,add=TRUE,riskRange=4)
+```
+
+##Question 3
+```{r}
+avg <- colMeans(as.data.frame(gr$R[,-26]))
+var_cov <- cov(gr$R[,-26])
+x_equal <- rep(1,25)/25
+Rbar_equal <- t(x_equal) %*% avg
+sd_equal <- (t(x_equal) %*% var_cov %*% x_equal)^0.5
+##expected return of the equally allocated portfolio
+Rbar_equal
+sd_equal
+```
+
+##Question 4a
+```{r}
+m3<-stockModel(gr,model='SIM', index=26, shortSelling=FALSE, Rf=0.001)
+op3<-optimalPort(m3)
+op3
+```
+
+##4b
+```{r}
+m3$alpha
+m3$beta
+
+```
+
+##4c
+```{r}
+m4<-stockModel(gr,model='SIM', index=26, Rf=0.001)
+op4<-optimalPort(m4)
+op4
+m4$alpha
+m4$beta
+```
+
+##Question 5a
+```{r}
+m5  <- stockModel(gr, model='CCM', shortSelling=FALSE, drop=26, Rf=0.001)
+op5 <- optimalPort(m5)
+op5
+```
+
+##Question 5b
+```{r}
+m6  <- stockModel(gr, model='CCM', drop=26, Rf=0.001)
+op6 <- optimalPort(m6)
+op6
+```
+
+##Question 6
+```{r}
+mgm1<- stockModel(gr, model='MGM', drop=26, industry=ind, Rf=0.001)
+opmgm1<- optimalPort(mgm1)
+opmgm1
+```
+
+##Question 7
+```{r}
+plot(op1)
+portPossCurve(m1,add=TRUE,riskRange=4)
+points(op3$risk, op3$R, col="yellow", pch=19)
+points(op4$risk, op4$R, col="green", pch=19)
+points(op5$risk, op5$R, col="orange", pch=19)
+points(op6$risk, op6$R, col="blue", pch=19)
+points(opmgm1$risk, opmgm1$R, col="purple", pch=19)
+legend(0.33, 0.08,c("SIM no short sales", "SIM short sales", "CCM no short sales", "CCM short sales", "MGM"), text.col=c("yellow", "green", "orange", "blue", "purple"))
+```
+
+##Part B
+##Question a
+```{r}
+gr1<- getReturns(ticker, start='2013-12-31', end='2016-04-30')
+avg_a <- colMeans(as.data.frame(gr1$R[,-26]))
+var_cov_a <- cov(gr1$R[,-26])
+x_equal_1 <- rep(1,25)/25
+Rbar_equal_1 <- t(x_equal_1) %*% avg_a
+var_a<-t(x_equal_1) %*%var_cov_a%*%x_equal_1
+Rbar_equal_1
+```
+
+##Question b
+```{r}
+sim_b<-stockModel(gr1,model='SIM', index=26,shortSelling=FALSE)
+opsim_b<-optimalPort(sim_b)
+opsim_b
+```
+
+##Question c
+```{r}
+rft=rep(0.01,28)
+xc<- as.matrix(cbind(op3$X))
+Ret2<- as.matrix(cbind(gr1$R[,-26]))
+Ret_c <-0.5*Ret2%*%xc+0.5*rft
+Ret_c
+```
+
+##Question d
+```{r}
+ccm_d  <- stockModel(gr1, model='CCM', shortSelling=FALSE, drop=26)
+op_d <- optimalPort(ccm_d)
+op_d
+```
+
+##Question e
+```{r}
+mgm_e<-stockModel(gr1,model='MGM', drop=26, industry=ind)
+op_e<-optimalPort(mgm_e)
+op_e
+```
+
+```{r}
+tpopsim_2 <- testPort(gr1, opsim_b)
+tpopccm_2 <- testPort(gr1, op_d)
+tpopmgm_1 <- testPort(gr1, op_e)
+tpEqu <- testPort(gr1$R[,-26], X=rep(1,25)/25)
+
+plot(tpopsim_2, lty=2, col="blue",lwd=2, ylim=c(0.4, 4.0))
+lines(tpopccm_2, lty=3, col="purple",lwd=2)
+lines(tpopmgm_1, lty=4, col="green",lwd=2)
+
+lines(tpEqu, lty=5, col="orange",lwd=2)
+lines(cumprod(1+rev(Ret_c)),col="pink", lty=6,lwd=2)
+lines(cumprod(1+rev(gr1$R[,26])), col="red", lwd=2)
+
+#Add a legend:
+legend("topleft", pt.cex=1,cex=0.6,lty=1:5, c( 'SIM', 'CCM', 'MGM', 'EQUAL', '50%SIM50%Rf','S&P500'), col=c( "blue", "purple", "green", "orange","pink", "red"))
+```
+
+##Sharp Ratio
+```{r}
+ccm<-(op_d$R-0.01)/op_d$risk
+mgm<-(op_e$R-0.01)/op_e$risk
+equal_allo<-(Rbar_equal_1-0.01)/sqrt(var_a)
+sim<-(opsim_b$R-0.01)/opsim_b$risk
+sim_rf<-(mean(Ret_c)-0.01)/(0.25*op3$risk)
+market<-(mean(gr1$R[,26])-0.01)/sd(gr1$R[,26])
+paste(ccm,mgm,equal_allo,sim,sim_rf, market)
+```
+
+##Differential return
+```{r}
+plot(x=c(op_d$risk,0),y=c(op_d$R,0.01), type="l", col="yellow", ylim=c(0,0.1), xlim=c(0,0.1), xlab="risk", ylab="return")
+lines(x=c(op_e$risk,0),y=c(op_e$R,0.01), col="green")
+lines(x=c(opsim_b$risk,0),y=c(opsim_b$R,0.01), col="blue")
+lines(x=c(0.25*op3$risk,0),y=c(mean(Ret_c),0.01), col="purple")
+lines(x=c(sqrt(var_a),0),y=c(Rbar_equal_1,0.01), col="black")
+lines(x=c(sd(gr1$R[,26]),0),y=c(mean(gr1$R[,26]),0.01), col="red")
+legend("topleft", pt.cex=1,cex=0.6,lty=1:5, c( 'SIM', 'CCM', 'MGM', 'EQUAL', '50%SIM50%Rf','S&P500'), col=c( "blue", "yellow", "green", "black","purple", "red"))
+```
+
+##Treyor Measure
+```{r}
+library(PerformanceAnalytics)
+rr<-gr1$R[,1:25]
+mgm_trey<-TreynorRatio(Ra=rr%*%op_e$X, Rb=gr1$R[,26], Rf = 0.01, scale = 12)
+ccm_trey<-TreynorRatio(Ra=rr%*%op_d$X, Rb=gr1$R[,26], Rf = 0.01, scale = 12)
+sim_trey<-TreynorRatio(Ra=rr%*%opsim_b$X, Rb=gr1$R[,26], Rf = 0.01, scale = 12)
+simrf_trey<-TreynorRatio(Ra=Ret_c, Rb=gr1$R[,26], Rf = 0.01, scale = 12)
+equal_trey<-TreynorRatio(Ra=rr%*%x_equal_1, Rb=gr1$R[,26], Rf = 0.01, scale = 12)
+paste(mgm_trey, ccm_trey, sim_trey, simrf_trey, equal_trey)
+```
+

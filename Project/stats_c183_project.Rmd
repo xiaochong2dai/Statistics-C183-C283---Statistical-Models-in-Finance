@@ -1,0 +1,227 @@
+---
+UID: 604501750
+date: "May 22, 2016"
+output: word_document
+student: Guan Zhou
+---
+
+##Part A
+
+```{r}
+library(stockPortfolio)
+ticker<-c("GOOG", "ABTL", "BIDU", "MEET", "YHOO", "AET", "ANTM", "CNC", "ESRX", "UNH", "AMZN", "EVLV", "GAIA", "LQDT", "MELI", "ADBE", "INTU", "ORCL", "RHT", "CRM", "EMC","NTAP", "STX", "TDC", "WDC", "S&P500")
+ind<-c(rep("Internet Information Providers", 5), rep("HEALTH CARE PLANS", 5), rep("Catalog & Mail Order Houses", 5), rep("Application Software", 5), rep("Data Storage Devices", 5), "Market")
+my_data<-as.data.frame(cbind(ticker,ind))
+my_data
+gr<-getReturns(ticker,start='2008-12-31', end='2013-12-31')
+summary(gr)
+```
+
+##Question 1
+```{r}
+m1<-stockModel(gr,drop=26,Rf= 0.001)
+summary(m1)
+op1<-optimalPort(m1) 
+# point of tangency
+op1$X 
+# expected return
+op1$R   
+# standard deviation
+op1$risk     
+plot(op1)
+slope <- (op1$R-m1$Rf)/op1$risk
+slope
+segments(0,m1$Rf,2*op1$risk, m1$Rf+slope*2*op1$risk)
+```
+
+##Question 2
+```{r}
+# choose Rf to be Rf=0.003
+m2<-stockModel(gr,drop=26,Rf=0.003)
+op2<-optimalPort(m2)
+plot(op2)
+slope2 <- (op2$R-m2$Rf)/op2$risk
+slope2
+segments(0,m2$Rf,2*op1$risk, m2$Rf+slope2*2*op1$risk)
+portPossCurve(m2,add=TRUE,riskRange=4)
+
+# choose Rf to be Rf=0.004
+m3<-stockModel(gr,drop=26,Rf=0.004)
+op3<-optimalPort(m3)
+plot(op3)
+slope3 <- (op3$R-m3$Rf)/op3$risk
+slope3
+segments(0, m3$Rf, 2*op1$risk, m3$Rf+slope3*2*op1$risk)
+portPossCurve(m3,add=TRUE,riskRange=4)
+```
+
+##Question 3
+```{r}
+avg <- colMeans(as.data.frame(gr$R[,-26]))
+var_cov <- cov(gr$R[,-26])
+x_equal <- rep(1,25)/25
+Rbar_equal <- t(x_equal) %*% avg
+sd_equal <- (t(x_equal) %*% var_cov %*% x_equal)^0.5
+# expected return of this portfolio
+Rbar_equal
+# standard deviation of this portfolio
+sd_equal
+```
+
+##Question 4a
+```{r}
+m4a<-stockModel(gr,model='SIM', index=26, shortSelling=FALSE, Rf=0.001)
+op4a<-optimalPort(m4a)
+op4a
+```
+
+##4b
+```{r}
+# alpha
+m4a$alpha
+# beta
+m4a$beta
+```
+
+##4c
+```{r}
+m4c<-stockModel(gr,model='SIM', index=26, shortSelling=TRUE, Rf=0.001)
+op4c<-optimalPort(m4c)
+op4c
+# alpha
+m4c$alpha
+# beta
+m4c$beta
+```
+
+##Question 5a
+```{r}
+# short sale not allowed
+m5a<-stockModel(gr, model='CCM', shortSelling=FALSE, drop=26, Rf=0.001)
+op5a<-optimalPort(m5a)
+op5a
+```
+
+##Question 5b
+```{r}
+# short sale allowed
+m5b<-stockModel(gr, model='CCM', drop=26, shortSelling=TRUE, Rf=0.001)
+op5b<-optimalPort(m5b)
+op5b
+```
+
+##Question 6
+```{r}
+m6<-stockModel(gr, model='MGM', drop=26, industry=ind, Rf=0.001)
+op6<-optimalPort(m6)
+op6
+```
+
+##Question 7
+```{r}
+plot(op1)
+portPossCurve(m1,add=TRUE,riskRange=4)
+points(op4a$risk, op4a$R, col="purple", pch=19)
+points(op4c$risk, op4c$R, col="blue", pch=19)
+points(op5a$risk, op5a$R, col="yellow", pch=19)
+points(op5b$risk, op5b$R, col="orange", pch=19)
+points(op6$risk, op6$R, col="green", pch=19)
+legend(0.30, 0.09, c("SIM no short sales", "SIM short sales", "CCM no short sales", "CCM short sales", "MGM"), text.col=c("purple", "blue", "yellow", "orange", "green"))
+```
+
+##Part B
+##Question a
+```{r}
+grb<-getReturns(ticker, start='2013-12-31', end='2016-04-30')
+avg_a <- colMeans(as.data.frame(grb$R[,-26]))
+x_equal_1 <- rep(1,25)/25
+var_cov_a <- cov(grb$R[,-26])
+Rbar_equal_1 <- t(x_equal_1) %*% avg_a
+var_a<-t(x_equal_1) %*%var_cov_a%*%x_equal_1
+Rbar_equal_1
+```
+
+##Question b
+```{r}
+# Single index model with no short sales allowed
+sim_partb<-stockModel(grb,model='SIM', index=26, shortSelling=FALSE)
+op_sim_partb<-optimalPort(sim_partb)
+op_sim_partb
+```
+
+##Question c
+```{r}
+# 50% of the portfolio of part 4a and 50% of the risk free asset, 28 months
+rft=rep(0.01,28) 
+xc<- as.matrix(cbind(op4a$X))
+Ret2<- as.matrix(cbind(grb$R[,-26]))
+Ret_c <-0.5*Ret2%*%xc+0.5*rft
+Ret_c
+```
+
+##Question d
+```{r}
+ccm_partb<-stockModel(grb, model='CCM', shortSelling=FALSE, drop=26)
+op_ccm_partb<-optimalPort(ccm_partb)
+op_ccm_partb
+```
+
+##Question e
+```{r}
+mgm_partb<-stockModel(grb,model='MGM', drop=26, industry=ind)
+op_mgm_partb<-optimalPort(mgm_partb)
+op_mgm_partb
+```
+
+```{r}
+tpSim <- testPort(grb, op_sim_partb)
+tpCcm <- testPort(grb, op_ccm_partb)
+tpMgm <- testPort(grb, op_mgm_partb)
+tpEqu <- testPort(grb$R[,-26], X=rep(1,25)/25)
+
+plot(tpSim, lty=2, col="orange",lwd=2, ylim=c(0.4, 4.0))
+lines(tpCcm, lty=3, col="green",lwd=2)
+lines(tpMgm, lty=4, col="blue",lwd=2)
+
+lines(tpEqu, lty=5, col="yellow",lwd=2)
+lines(cumprod(1+rev(Ret_c)),col="red", lty=6,lwd=2)
+lines(cumprod(1+rev(grb$R[,26])), col="pink", lwd=2)
+
+#Add a legend:
+legend("topleft", pt.cex=1,cex=0.6,lty=1:5, c( 'SIM', 'CCM', 'MGM', 'EQUAL', '50%SIM&50%Rf','S&P500'), col=c( "orange", "green", "blue", "yellow","red", "pink"))
+```
+
+##Sharp Ratio
+```{r}
+sim<-(op_sim_partb$R-0.01)/op_sim_partb$risk
+ccm<-(op_ccm_partb$R-0.01)/op_ccm_partb$risk
+mgm<-(op_mgm_partb$R-0.01)/op_mgm_partb$risk
+equal_all<-(Rbar_equal_1-0.01)/sqrt(var_a)
+sim_rf<-(mean(Ret_c)-0.01)/(0.25*op4a$risk)
+market<-(mean(grb$R[,26])-0.01)/sd(grb$R[,26])
+paste(ccm,mgm,equal_all,sim,sim_rf, market)
+```
+
+##Differential return 
+```{r}
+plot(x=c(op_ccm_partb$risk,0),y=c(op_ccm_partb$R,0.01), type="l", col="purple", ylim=c(0,0.1), xlim=c(0,0.1), xlab="risk", ylab="return")
+lines(x=c(op_mgm_partb$risk,0),y=c(op_mgm_partb$R,0.01), col="blue")
+lines(x=c(op_sim_partb$risk,0),y=c(op_sim_partb$R,0.01), col="orange")
+lines(x=c(0.25*op4a$risk,0),y=c(mean(Ret_c),0.01), col="green")
+lines(x=c(sqrt(var_a),0),y=c(Rbar_equal_1,0.01), col="black")
+lines(x=c(sd(grb$R[,26]),0),y=c(mean(grb$R[,26]),0.01), col="pink")
+legend("topleft", pt.cex=1,cex=0.6,lty=1:5, c( 'SIM', 'CCM', 'MGM', 'EQUAL', '50%SIM&50%Rf','S&P500'), col=c( "orange", "purple", "blue", "black", "green", "pink"))
+```
+
+##Treyor Measure
+```{r}
+library(PerformanceAnalytics)
+rr<-grb$R[,1:25]
+sim_trey<-TreynorRatio(Ra=rr%*%op_sim_partb$X, Rb=grb$R[,26], Rf = 0.01, scale = 12)
+ccm_trey<-TreynorRatio(Ra=rr%*%op_ccm_partb$X, Rb=grb$R[,26], Rf = 0.01, scale = 12)
+mgm_trey<-TreynorRatio(Ra=rr%*%op_mgm_partb$X, Rb=grb$R[,26], Rf = 0.01, scale = 12)
+simrf_trey<-TreynorRatio(Ra=Ret_c, Rb=grb$R[,26], Rf = 0.01, scale = 12)
+equal_trey<-TreynorRatio(Ra=rr%*%x_equal_1, Rb=grb$R[,26], Rf = 0.01, scale = 12)
+paste(mgm_trey, ccm_trey, sim_trey, simrf_trey, equal_trey)
+```
+

@@ -1,1 +1,1 @@
-UCLA Statistics C183/C283 - Statistical Models in Finance during Spring 2016 offered by Professore Nicolas Christou.
+UCLA Statistics C183/C283 - Statistical Models in Finance during Spring 2016 offered by Professor Nicolas Christou.
